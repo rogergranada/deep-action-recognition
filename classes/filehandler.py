@@ -9,11 +9,12 @@ logging.basicConfig(format='%(asctime)s : %(levelname)s : %(message)s', level=lo
 
 import numpy as np
 from os.path import realpath, dirname, splitext
-from os.path import basename, isfile, isdir
+from os.path import basename, isfile, isdir, join
 
 from classes import progressbar
 
 def is_file(inputfile):
+    """ Check whether the ``inputfile`` corresponds to a file """
     inputfile = realpath(inputfile)
     if not isfile(inputfile):
         logger.error('Input is not a file!')
@@ -22,11 +23,23 @@ def is_file(inputfile):
 
 
 def is_folder(inputfolder):
+    """ Check whether the ``inputfolder`` corresponds to a folder """
     inputfolder = realpath(inputfolder)
     if not isdir(inputfolder):
-        logger.error('Argument -o is not a folder!')
+        logger.error('Argument %s is not a folder!' % inputfolder)
         sys.exit(0)
     return inputfolder
+
+
+def add_text2path(path, text, withfolder=True):
+    """ Add text to the end of the pathfile -- before the extension """
+    path = realpath(path)
+    dirfile = dirname(path)
+    fname, ext = splitext(basename(path))
+    fileout = fname+"_"+str(text)+ext
+    if withfolder:
+        return join(dirfile, fileout)
+    return fileout
 
 
 def add2dic(dic, key, value):
@@ -68,7 +81,10 @@ class PathfileHandler(object):
         with open(self.inputfile) as fin:
             for line in fin:
                 arr = line.strip().split()
-                if len(arr):
+                if len(arr) == 1:
+                    self.path = arr
+                    yield self.path
+                elif len(arr) > 1:
                     self.path = arr[0]
                     self.label = arr[1]
                     if len(arr) > 2:
@@ -250,4 +266,54 @@ class Videos(PathfileHandler):
             elif self.name == "ucf11":
                 self._videos_ucf11()
         return self.videos
+#End of class Videos
+
+
+class Images(PathfileHandler):
+    """ Class to extract videos from files """
+
+    def __init__(self, inputfile, dataset_name):
+        PathfileHandler.__init__(self, inputfile, display=False)
+
+        self.name = None
+        self.root = None
+        self.fname = None
+        self.is_dataset(dataset_name)
+
+
+    def is_dataset(self, dtname):
+        nm_data = dtname.lower()
+        if nm_data in ("dogcentric", "dogs"):
+            self.name = "dogs"
+        elif nm_data in ("kscgr", "kitchen"):
+            self.name = "kscgr"
+        elif nm_data in ("ucf11", "ucf-11"):
+            self.name = "ucf11"
+        else:
+            logger.error("Dataset %s does not exists!" % nm_data)
+            sys.exit(0)
+
+
+    def _paths_dogs(self):
+        # ~/Car/Car_Ringo_5_9810_9910_frame_83.jpg
+        arr = self.path.split('/')
+        self.root = '/'.join(arr[0:-2])
+        self.fname = '/'.join(arr[-2:])
+
+
+    def _paths_kscgr_ucf11(self):
+        # ~/data1/boild-egg/img256/0.jpg
+        # ~/basketball/v_shooting_14/v_shooting_14_01/image_00001.jpg
+        arr = self.path.split('/')
+        self.root = '/'.join(arr[0:-4])
+        self.fname = '/'.join(arr[-4:])
+
+
+    def extract_root(self):
+        """ extract the root and file name of paths """
+        if self.name == "dogs":
+            self._paths_dogs()
+        elif self.name in ("kscgr", "ucf11"):
+            self._paths_kscgr_ucf11()
+        return self.root, self.fname
 #End of class Videos

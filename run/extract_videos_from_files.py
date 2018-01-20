@@ -10,7 +10,7 @@ logger = logging.getLogger(__name__)
 logging.basicConfig(format='%(asctime)s : %(levelname)s : %(message)s', level=logging.INFO)
 
 import argparse
-from os.path import realpath, dirname, join
+from os.path import realpath
 
 # customized files
 from images import extract_videos

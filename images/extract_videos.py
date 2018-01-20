@@ -45,6 +45,7 @@ def extract(inputfile, dataset, output=None):
         fname = video+'.txt'
         vname = join(dirout, fname)
         fvideos.write('%s\n' % vname)
+        logger.info('Creating file: %s' % fname)
         with open(vname, 'w') as fout:
             for path, y in sorted(dvideos[video]):
                 fout.write('%s %s\n' % (path, y))
