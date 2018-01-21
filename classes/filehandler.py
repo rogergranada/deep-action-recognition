@@ -41,6 +41,12 @@ def add_text2path(path, text, withfolder=True):
         return join(dirfile, fileout)
     return fileout
 
+def filename(path, extension=True):
+    fname, ext = splitext(basename(path))
+    if extension:
+        return fname, ext
+    return fname
+
 
 def add2dic(dic, key, value):
     if dic.has_key(key):
