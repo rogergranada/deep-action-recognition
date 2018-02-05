@@ -7,6 +7,7 @@ import logging
 logger = logging.getLogger(__name__)
 logging.basicConfig(format='%(asctime)s : %(levelname)s : %(message)s', level=logging.INFO)
 
+import ast
 import numpy as np
 from os.path import realpath, dirname, splitext
 from os.path import basename, isfile, isdir, join
@@ -94,7 +95,10 @@ class PathfileHandler(object):
                     self.path = arr[0]
                     self.label = arr[1]
                     if len(arr) > 2:
-                        self.feats = map(float, arr[2:])
+                        if len(arr[2:]) == 1:
+                            self.feats = ast.literal_eval(arr[2])
+                        else:
+                            self.feats = map(float, arr[2:])
                         yield self.path, self.label, self.feats
                     else:
                         yield self.path, self.label
