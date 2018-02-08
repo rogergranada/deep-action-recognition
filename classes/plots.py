@@ -85,9 +85,6 @@ class ConfusionMatrix(object):
         type : string
             extension of the image file
         """
-        #name = filehandler.filename(fname, extension=False)
-        #fname = join(dirname(fname), name+'.'+type)
-
         logger.info('Saving confusion matrix: %s' % fname)
         plt.gcf().subplots_adjust(bottom=0.15)
         cm_norm = self._genConfusionMatrix()
