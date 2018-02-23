@@ -7,7 +7,7 @@ It will create an output file that have the path from the image, the correct lab
 import sys
 sys.path.insert(0, '..')
 import logging
-logger = logging.getLogger('run.img_mean')
+logger = logging.getLogger(__name__)
 logging.basicConfig(format='%(asctime)s : %(levelname)s : %(message)s', level=logging.INFO)
 
 import os
