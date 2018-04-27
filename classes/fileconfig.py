@@ -63,7 +63,8 @@ class Configuration(object):
         """
         Return the labels of ``dataset`` and their respective colors and ids
         """
-        if not self.actions.has_key(dataset.lower()):
+        dataset = dataset.lower()
+        if not self.actions.has_key(dataset):
             logger.error('Dataset %s does not exist!' % dataset)
             sys.exit(0)
         labels = self.actions[dataset]

@@ -42,7 +42,7 @@ class ConfusionMatrix(object):
 
         fc = fileconfig.Configuration()
         self.labels = fc.labels(dataset)
-    
+
         if cmatrix:
             self.cm = cmatrix
         elif inputfile:
@@ -108,3 +108,82 @@ class ConfusionMatrix(object):
         plt.savefig(fname, format=type)
 #End of DisplayConfusionMatrix class
 
+def save_multiple_plots(fname, matrices, vec_labels, title='', cmap=plt.cm.Blues, type='eps', show_values=False):
+    """
+    Save the multiple confusion matrices into a file `fname`
+
+    Parameters:
+    -----------
+    fname : string
+        path to the output file (with extension)
+    title : array
+        title of each plot
+    cmap : pyplot colors
+        colors of matplotlib
+    type : string
+        extension of the image file
+    """ 
+    if len(matrices) != len(vec_labels):
+        logger.error("Titles and Matrices must have the same lenght")
+
+    nbmats = len(matrices)
+    subplts = '1'+str(nbmats)
+    plt.figure(figsize=(35,10))
+
+    plt.subplot(141)    
+    plt.imshow(matrices[0], interpolation='nearest', cmap=cmap, aspect='auto')
+    tick_marks = np.arange(len(vec_labels[0]))
+    plt.xticks(tick_marks, vec_labels[0], rotation=45, ha='right', fontsize=16)
+    plt.yticks(tick_marks, vec_labels[0], fontsize=16)
+    plt.title(title[0])
+    plt.subplot(142)    
+    plt.imshow(matrices[1], interpolation='nearest', cmap=cmap, aspect='auto')
+    tick_marks = np.arange(len(vec_labels[1]))
+    plt.xticks(tick_marks, vec_labels[1], rotation=45, ha='right', fontsize=16)
+    plt.yticks(tick_marks, vec_labels[1], fontsize=16)
+    plt.title(title[1])
+    plt.subplot(143)    
+    plt.imshow(matrices[2], interpolation='nearest', cmap=cmap, aspect='auto')
+    tick_marks = np.arange(len(vec_labels[2]))
+    plt.xticks(tick_marks, vec_labels[2], rotation=45, ha='right', fontsize=16)
+    plt.yticks(tick_marks, vec_labels[2], fontsize=16)
+    plt.title(title[2])
+    
+    """
+    logger.info('Saving confusion matrix: %s' % fname)
+    index = 1
+    for confmat, labels in zip(matrices, vec_labels):
+        nbplot = int(subplts+str(index))
+        plt.subplot(nbplot)
+        #plt.ylabel('Damped oscillation')
+        #plt.suptitle('This is a somewhat long figure title', fontsize=16)
+
+        #plt.gcf().subplots_adjust(bottom=0.15)
+        print confmat
+        plt.imshow(confmat, interpolation='nearest', cmap=cmap)
+        #plt.suptitle(title)
+
+        if show_values:
+            thresh = confmat.max() / 2.
+            for i, j in itertools.product(range(confmat.shape[0]), range(confmat.shape[1])):
+                plt.text(j, i, format(confmat[i, j], '.2f'),
+                     horizontalalignment="center", fontsize=5,
+                     color="white" if confmat[i, j] > thresh else "black")
+        index += 1
+    """
+    plt.subplots_adjust(bottom=0.1, right=0.6, top=0.9)
+    cax = plt.axes([0.75, 0.15, 0.02, 0.81])
+    #plt.colorbar(cax=cax)
+    bounds = np.linspace(0.0,1.0,11)
+    print bounds
+    cb = mpl.colorbar.ColorbarBase(cax, cmap=cmap, ticks=bounds) #, format='%1i')
+    cb.ax.tick_params(labelsize=16) 
+
+    #plt.colorbar()
+    #plt.subplots_adjust(left=1, wspace=0.8, top=0.8)
+    #plt.subplots_adjust(left=0.1, bottom = 0.1, top=0.9)
+
+    plt.tight_layout()
+    #plt.ylabel('Predicted label')
+    #plt.xlabel('True label')
+    plt.savefig(fname, format=type)
