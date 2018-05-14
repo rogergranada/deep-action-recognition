@@ -1,8 +1,7 @@
 #!/usr/bin/python
 #-*- coding: utf-8 -*-
 """
-This script will take all the images from inputfile and classify according the neural net.
-It will create an output file that have the path from the image, the correct label, and the predict label.
+This script generates optical flow from two input images 
 """
 import sys
 sys.path.insert(0, '..')
@@ -17,7 +16,7 @@ from os.path import join, dirname
 # customized files
 from classes import filehandler as fh
 from images import opticalflow as of
-
+import cv2
 
 def main(frame1, frame2, output=None, channels=False):
     image_1 = fh.is_file(frame1)
@@ -26,8 +25,16 @@ def main(frame1, frame2, output=None, channels=False):
         dirout = fh.is_folder(output)
     else:
         dirin = dirname(frame1)
-        output = join(dirin, 'optical_flow.jpg')
-    of.optical_flow(frame1, frame2, channels=False)
+
+    flow = of.optical_flow(frame1, frame2, channels=channels)
+    if channels:
+        outflowX = join(dirin, 'optflow_x.jpg')
+        outflowY = join(dirin, 'optflow_y.jpg')
+        cv2.imwrite(outflowX, flow[0])
+        cv2.imwrite(outflowY, flow[1])
+    else:
+        output = join(dirin, 'optflow.jpg')
+        cv2.imwrite(output, flow)
 
 
 if __name__ == "__main__":

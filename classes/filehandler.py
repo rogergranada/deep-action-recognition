@@ -57,6 +57,54 @@ def add2dic(dic, key, value):
     return dic
 
 
+def imgpath2dic(inputfile):
+    """ Create a dictionary containing an index for each path in a file """
+    inputfile = is_file(inputfile)
+    dic = {}
+    index = 0
+    with open(inputfile) as fin:
+        for line in fin:
+            path = line.split()[0]
+            dic[index] = path
+            index += 1
+    return dic
+
+
+def pairs_of_paths(vpaths, window):
+    """
+    Return pairs of images to generate the optical flow.
+    These pairs contains the first and the last image of the optical flow
+    according to the size of the window.
+    
+    Parameters:
+    -----------
+    vpaths : array_like
+        sorted list containing the image ids (type int)
+    window : int
+        size of the window to generate the optical flow
+
+    Returns:
+    --------
+    pairs : array_like
+        list containing tuples with pairs as (first image, last image)
+        of the optical flow
+
+    Usage:
+    ------
+    >>> vpaths = [0, 1, 2, 3]
+    >>> window_optical_flow(vpaths, 2)
+        [(0, 2), (1, 3), (2, 3), (3, 3)]
+    """
+    pairs = []
+    for img in vpaths:
+        last_img = img + window
+        if last_img in vpaths:
+            pairs.append((img, last_img))
+        else:
+            pairs.append((img, vpaths[-1]))
+    return pairs
+
+
 class PathfileHandler(object):
     """Class to deal with files containing paths and labels/features"""
 
