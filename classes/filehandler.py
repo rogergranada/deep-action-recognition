@@ -14,19 +14,24 @@ from os.path import basename, isfile, isdir, join
 
 from classes import progressbar
 
-def is_file(inputfile):
+
+def is_file(inputfile, boolean=False):
     """ Check whether the ``inputfile`` corresponds to a file """
     inputfile = realpath(inputfile)
     if not isfile(inputfile):
+        if boolean:
+            return False
         logger.error('Input is not a file!')
         sys.exit(0)
     return inputfile
 
 
-def is_folder(inputfolder):
+def is_folder(inputfolder, boolean=False):
     """ Check whether the ``inputfolder`` corresponds to a folder """
     inputfolder = realpath(inputfolder)
     if not isdir(inputfolder):
+        if boolean:
+            return False
         logger.error('Argument %s is not a folder!' % inputfolder)
         sys.exit(0)
     return inputfolder
@@ -41,6 +46,7 @@ def add_text2path(path, text, withfolder=True):
     if withfolder:
         return join(dirfile, fileout)
     return fileout
+
 
 def filename(path, extension=True):
     fname, ext = splitext(basename(path))
@@ -327,11 +333,11 @@ class Videos(PathfileHandler):
 #End of class Videos
 
 
-class Images(PathfileHandler):
-    """ Class to extract videos from files """
+class ImagePaths(PathfileHandler):
+    """ Class to deal with names of paths """
 
-    def __init__(self, inputfile, dataset_name):
-        PathfileHandler.__init__(self, inputfile, display=False)
+    def __init__(self, inputfile, dataset_name, display=False):
+        PathfileHandler.__init__(self, inputfile, display=display)
 
         self.name = None
         self.root = None
@@ -347,6 +353,8 @@ class Images(PathfileHandler):
             self.name = "kscgr"
         elif nm_data in ("ucf11", "ucf-11"):
             self.name = "ucf11"
+        elif nm_data in ("penn", "pennaction"):
+            self.name = "penn"
         else:
             logger.error("Dataset %s does not exists!" % nm_data)
             sys.exit(0)
@@ -357,6 +365,13 @@ class Images(PathfileHandler):
         arr = self.path.split('/')
         self.root = '/'.join(arr[0:-2])
         self.fname = '/'.join(arr[-2:])
+
+
+    def _paths_penn(self):
+        # ~/frames/0001/000005.jpg
+        arr = self.path.split('/')
+        self.root = '/'.join(arr[0:-3])
+        self.fname = '/'.join(arr[-3:])
 
 
     def _paths_kscgr_ucf11(self):
@@ -373,5 +388,7 @@ class Images(PathfileHandler):
             self._paths_dogs()
         elif self.name in ("kscgr", "ucf11"):
             self._paths_kscgr_ucf11()
+        elif self.name in ("penn", "pennaction"):
+            self._paths_penn()
         return self.root, self.fname
-#End of class Videos
+#End of class ImagePaths
