@@ -140,7 +140,7 @@ class PathfileHandler(object):
         """
         pb = progressbar.ProgressBar(self.nb_lines)
         with open(self.inputfile) as fin:
-            for line in fin:
+            for self.k, line in enumerate(fin):
                 arr = line.strip().split()
                 if len(arr) == 1:
                     self.path = arr
@@ -268,6 +268,7 @@ class Videos(PathfileHandler):
         PathfileHandler.__init__(self, inputfile, display=False)
 
         self.videos = {}
+        self.root = None
         self.name = None
         self.is_dataset(dataset_name)
 
@@ -280,6 +281,8 @@ class Videos(PathfileHandler):
             self.name = "kscgr"
         elif nm_data in ("ucf11", "ucf-11"):
             self.name = "ucf11"
+        elif nm_data in ("penn", "pennaction"):
+            self.name = "penn"
         else:
             logger.error("Dataset %s does not exists!" % nm_data)
             sys.exit(0)
@@ -289,46 +292,100 @@ class Videos(PathfileHandler):
         # ~/Car/Car_Ringo_5_9810_9910_frame_83.jpg
         fname, ext = splitext(basename(self.path))
         nm_video, frame = fname.split('_frame_')
+        self.root = nm_video+'_frame_'
         if nb_frames:
             frame = int(frame)
-            add2dic(self.videos, nm_video, frame)
+            return nm_video, frame
         else:
-            add2dic(self.videos, nm_video, (self.path, self.label))
+            return nm_video, self.path
 
 
     def _videos_kscgr(self, nb_frames=False):
         # ~/Data/data1/boild-egg/img256/0.jpg
         arr = self.path.split('/')
+        self.root = '/'.join(arr[:-4])
         nm_video = arr[-4]+'_'+arr[-3]+'_'+arr[-2]
         if nb_frames:
             frame, ext = splitext(basename(self.path))
             frame = int(frame)
-            add2dic(self.videos, nm_video, frame)
+            return nm_video, frame
         else:
-            add2dic(self.videos, nm_video, (self.path, self.label))
+            return nm_video, self.path
 
 
     def _videos_ucf11(self, nb_frames=False):
         # ~/basketball/v_shooting_14/v_shooting_14_01/image_00001.jpg
         arr = self.path.split('/')
+        self.root = '/'.join(arr[:-4])
         nm_video = arr[-4]+'_'+arr[-3]+'_'+arr[-2]
         if nb_frames:
             frame, ext = splitext(basename(self.path))
             frame = int(frame.split('_')[1])
-            add2dic(self.videos, nm_video, frame)
+            return nm_video, frame
         else:
-            add2dic(self.videos, nm_video, (self.path, self.label))
+            return nm_video, self.path
+
+
+    def _videos_penn(self, nb_frames=False):
+        # ~/frames/0001/000001.jpg
+        arr = self.path.split('/')
+        self.root = '/'.join(arr[:-2])
+        nm_video = arr[-2]
+        if nb_frames:
+            frame, ext = splitext(basename(self.path))
+            return nm_video, frame
+        else:
+            return nm_video, self.path
+
+
+    def _video_frame(self, nb_frames=False):
+        """ Return the name of the video and the number of the frame """
+        if self.name == "dogs":
+            videoframes = self._videos_dogs(nb_frames)
+        elif self.name == "kscgr":
+            videoframes = self._videos_kscgr(nb_frames)
+        elif self.name == "ucf11":
+            videoframes = self._videos_ucf11(nb_frames)
+        elif self.name == "penn":
+            videoframes = self._videos_penn(nb_frames)
+        else:
+            videoframes = None, None
+        return videoframes
 
 
     def extract_videos(self):
-        """ create a dictionary containing {video_name: [frames]} """
+        """ Create a dictionary containing {video_name: [frames]} """
         for k in self:
-            if self.name == "dogs":
-                self._videos_dogs()
-            elif self.name == "kscgr":
-                self._videos_kscgr()
-            elif self.name == "ucf11":
-                self._videos_ucf11()
+            nm_video, frame = self._video_frame()
+            add2dic(self.videos, nm_video, int(frame))
+        return self.videos
+
+
+    def label_videos(self):
+        """ 
+        Creates a dictionary containing the class of the video as the key
+        and a dictionary with the name of video and frames as value.
+        The dictionary has the structure of:
+            dic[label] = {path_to_image: [image_names]}
+        Thus, the examples below become:
+            /usr/share/datasets/Penn_Action/256/frames/0001/000001.jpg 0
+            /usr/share/datasets/Penn_Action/256/frames/0001/000002.jpg 0
+
+            dic[0] = {'/usr/share/datasets/Penn_Action/256/frames/0001':
+                        ['000001.jpg', '000002.jpg, ... '000049.jpg'],
+                      '/usr/share/datasets/Penn_Action/256/frames/0002':
+                        ['000001.jpg', '000002.jpg, ... '000049.jpg']
+            }
+        """
+        for _ in self:
+            nm_video, frame = self._video_frame(nb_frames=True)
+            fvideo = join(self.root, nm_video)
+            label = int(self.label)
+
+            if self.videos.has_key(label):
+                add2dic(self.videos[label], fvideo, (frame))
+            else:
+                self.videos[label] = {fvideo: [frame]}
         return self.videos
 #End of class Videos
 

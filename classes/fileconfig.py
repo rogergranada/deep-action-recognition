@@ -12,7 +12,7 @@ logging.basicConfig(format='%(asctime)s : %(levelname)s : %(message)s', level=lo
 class Configuration(object):
 
     def __init__(self, configfile=None):
-        self.input = None
+        self.fconf = configfile
         self.color_id = []
         self.color_hx = []
         self.color_nm = [] 
@@ -21,8 +21,19 @@ class Configuration(object):
         if configfile:
             self.input = open(configfile)
         else:
+            self.fconf = '../datasets.conf'
             self.input = open('../datasets.conf')
         self._loadcontent()
+
+    
+    def __str__(self):
+        """ Return the content of the class """
+        content = 'File configuration: '+str(self.fconf)
+        content += '\nColor IDs:'+str(self.color_id)
+        content += '\nColor Hex:'+str(self.color_hx)
+        content += '\nColor Names:'+str(self.color_nm)
+        content += '\nActions:'+str(self.actions)
+        return content
 
     
     def _loadcontent(self):
@@ -59,14 +70,19 @@ class Configuration(object):
                     self.actions[alias_name.lower()] = self.actions[dataset]
 
 
-    def labels(self, dataset):
-        """
-        Return the labels of ``dataset`` and their respective colors and ids
-        """
+    def _check_dataset(self, dataset):
+        """ Verify if the dataset exists """
         dataset = dataset.lower()
         if not self.actions.has_key(dataset):
             logger.error('Dataset %s does not exist!' % dataset)
             sys.exit(0)
+        return dataset
+
+    def labels(self, dataset):
+        """
+        Return the labels of ``dataset`` and their respective colors and ids
+        """
+        dataset = self._check_dataset(dataset)
         labels = self.actions[dataset]
         return labels
 
@@ -75,13 +91,25 @@ class Configuration(object):
         """
         Return the labels of ``dataset`` and their respective colors and ids
         """
-        if not self.actions.has_key(dataset.lower()):
-            logger.error('Dataset %s does not exist!' % dataset)
-            sys.exit(0)
+        dataset = self._check_dataset(dataset)
         labels = self.actions[dataset]
         colors = self.color_hx[:len(labels)]
         ids = self.color_id[:len(labels)]
         return labels, ids, colors
+
+
+    def id_label(self, dataset, key='label'):
+        """
+        Return each label with its ID associated
+        """
+        dataset = self._check_dataset(dataset)
+        labels = self.actions[dataset]
+        ids = self.color_id[:len(labels)]
+        if key == 'label':
+            dic = [(lbl.lower(), id) for lbl, id in zip(labels, ids)]
+        else:
+            dic = [(id, lbl.lower()) for lbl, id in zip(labels, ids)]
+        return dict(dic)
 
 
     def close(self):
