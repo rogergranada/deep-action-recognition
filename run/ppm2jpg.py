@@ -26,13 +26,12 @@ def main(fileinput, output=None, dataset="PENN"):
         dirout = join(dirin, 'JPG')
         if not isdir(dirout):
             os.makedirs(dirout)
-    cvr.convert_files(inputfile, dirout, dataset, of='ppm', to='jpg')
-
+    cvr.convert_files(fileinput, dirout, dataset, to='jpg')
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument('fileinput', metavar='file_input', help='File containing paths to JPG images to convert to PPM')
+    parser.add_argument('fileinput', metavar='file_input', help='File containing paths to PPM images to convert to JPG')
     parser.add_argument('-o', '--output', help='Folder to store the new PPM files', default=None)
     parser.add_argument('-d', '--dataset', help='Name of the dataset', default="PENN")
     args = parser.parse_args()

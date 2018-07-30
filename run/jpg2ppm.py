@@ -26,8 +26,7 @@ def main(fileinput, output=None, dataset="PENN"):
         dirout = join(dirin, 'PPM')
         if not isdir(dirout):
             os.makedirs(dirout)
-    cvr.jpg2ppm(fileinput, dirout, dataset)
-
+    cvr.convert_files(fileinput, dirout, dataset, to='ppm')
 
 
 if __name__ == "__main__":
