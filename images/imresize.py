@@ -37,7 +37,7 @@ def resize_image(img, size):
         new_height = (size * height) / width
         crop = new_height - size
         img = cv2.resize(img, (new_width, new_height), 0, 0, cv2.INTER_CUBIC)
-        img = img[crop / 2:new_min_dim + (crop / 2), :]
+        img = img[crop / 2:size + (crop / 2), :]
     else:
         new_height = size
         new_width = (size * width) / height
@@ -90,7 +90,7 @@ def resize_pathfile(inputfile, outputfolder, dataset, size):
     logger.info('resizing images to: %dx%d' % (size, size))
     logger.info('saving output file at: %s' % join(outputfolder, fname))
 
-    pf = filehandler.Images(inputfile, dataset)
+    pf = filehandler.ImagePaths(inputfile, dataset)
     for impath, label in pf:
         #logger.info('processing file: %s' % impath)
         _, fimg = pf.extract_root()
@@ -103,3 +103,4 @@ def resize_pathfile(inputfile, outputfolder, dataset, size):
         
         resize_file(impath, outpath, size)
         fout.write('%s %s\n' % (outpath, str(label)))
+
