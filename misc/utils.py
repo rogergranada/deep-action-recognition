@@ -11,7 +11,7 @@ import logging
 logger = logging.getLogger(__name__)
 logging.basicConfig(format='%(asctime)s : %(levelname)s : %(message)s', level=logging.INFO)
 
-from os.path import realpath, splitext, basename, join, exists, isdir, dirname
+from os.path import join, isdir, dirname
 
 from classes import filehandler as fh
 
@@ -79,8 +79,8 @@ def bronx_file(inputfile, outputfolder, outputfile, dataset, window=2):
     for label in sorted(dpairs):
         for path in sorted(dpairs[label]):
             for img1, img2 in sorted(dpairs[label][path]):
-                frame1 = join(path, img1+'.jpg')
-                frame2 = join(path, img2+'.jpg')
+                frame1 = join(path, img1+vid.ext)
+                frame2 = join(path, img2+vid.ext)
                 frameout = frame1.replace(vid.root, outputfolder)
                 if not isdir(dirname(frameout)):
                     os.makedirs(dirname(frameout))
