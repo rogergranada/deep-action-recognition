@@ -270,6 +270,7 @@ class Videos(PathfileHandler):
         self.videos = {}
         self.root = None
         self.name = None
+        self.ext = None
         self.is_dataset(dataset_name)
 
 
@@ -290,7 +291,7 @@ class Videos(PathfileHandler):
 
     def _videos_dogs(self, nb_frames=False):
         # ~/Car/Car_Ringo_5_9810_9910_frame_83.jpg
-        fname, ext = splitext(basename(self.path))
+        fname, self.ext = splitext(basename(self.path))
         nm_video, frame = fname.split('_frame_')
         self.root = nm_video+'_frame_'
         if nb_frames:
@@ -306,7 +307,7 @@ class Videos(PathfileHandler):
         self.root = '/'.join(arr[:-4])
         nm_video = arr[-4]+'_'+arr[-3]+'_'+arr[-2]
         if nb_frames:
-            frame, ext = splitext(basename(self.path))
+            frame, self.ext = splitext(basename(self.path))
             frame = int(frame)
             return nm_video, frame
         else:
@@ -319,7 +320,7 @@ class Videos(PathfileHandler):
         self.root = '/'.join(arr[:-4])
         nm_video = arr[-4]+'_'+arr[-3]+'_'+arr[-2]
         if nb_frames:
-            frame, ext = splitext(basename(self.path))
+            frame, self.ext = splitext(basename(self.path))
             frame = int(frame.split('_')[1])
             return nm_video, frame
         else:
@@ -332,7 +333,7 @@ class Videos(PathfileHandler):
         self.root = '/'.join(arr[:-2])
         nm_video = arr[-2]
         if nb_frames:
-            frame, ext = splitext(basename(self.path))
+            frame, self.ext = splitext(basename(self.path))
             return nm_video, frame
         else:
             return nm_video, self.path
@@ -399,6 +400,7 @@ class ImagePaths(PathfileHandler):
         self.name = None
         self.root = None
         self.fname = None
+        self.ext = None
         self.is_dataset(dataset_name)
 
 
@@ -422,6 +424,7 @@ class ImagePaths(PathfileHandler):
         arr = self.path.split('/')
         self.root = '/'.join(arr[0:-2])
         self.fname = '/'.join(arr[-2:])
+        _, self.ext = splitext(basename(self.path))
 
 
     def _paths_penn(self):
@@ -429,6 +432,7 @@ class ImagePaths(PathfileHandler):
         arr = self.path.split('/')
         self.root = '/'.join(arr[0:-3])
         self.fname = '/'.join(arr[-3:])
+        _, self.ext = splitext(basename(self.path))
 
 
     def _paths_kscgr_ucf11(self):
@@ -437,6 +441,7 @@ class ImagePaths(PathfileHandler):
         arr = self.path.split('/')
         self.root = '/'.join(arr[0:-4])
         self.fname = '/'.join(arr[-4:])
+        _, self.ext = splitext(basename(self.path))
 
 
     def extract_root(self):
