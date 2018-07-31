@@ -114,7 +114,7 @@ def pairs_of_paths(vpaths, window):
 class PathfileHandler(object):
     """Class to deal with files containing paths and labels/features"""
 
-    def __init__(self, inputfile, display=True):
+    def __init__(self, inputfile, display=True, load=False):
         """Initializes the class
         
         Parameters
@@ -132,6 +132,9 @@ class PathfileHandler(object):
         self.label = None
         self.feats = None
         logger.debug('Loading file: %s' % inputfile)
+
+        if load:
+            self.vpaths, self.vlabels, self.vfeats = load_file(inputfile)
 
 
     def __iter__(self):
@@ -158,6 +161,29 @@ class PathfileHandler(object):
                         yield self.path, self.label
                 if self.display:
                     pb.update()
+
+
+    @staticmethod
+    def load_file(inputfile):
+        """ Load the content of pathfile into `path`, `label` and `feats`
+        """
+        logger.debug('Loading file: %s' % inputfile)
+        vpaths, vlabels, vfeats = [], [], []
+        with open(inputfile) as fin:
+            for line in fin:
+                arr = line.strip().split()
+                if len(arr) == 2:
+                    vpaths.append(arr[0])
+                    vlabels.append(int(arr[1]))
+                elif len(arr) == 3:
+                    vpaths.append(arr[0])
+                    vlabels.append(int(arr[1]))
+                    vfeats.append(int(arr[2]))
+                elif len(arr) > 3:
+                    vpaths.append(arr[0])
+                    vlabels.append(int(arr[1]))
+                    vfeats.append(map(float, arr[2:]))
+        return vpaths, vlabels, vfeats
 
 
     @staticmethod
