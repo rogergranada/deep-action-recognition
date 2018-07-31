@@ -480,3 +480,41 @@ class ImagePaths(PathfileHandler):
             self._paths_penn()
         return self.root, self.fname
 #End of class ImagePaths
+
+
+def change_paths(gt_file, ft_file, outfile):
+    """
+    Change the paths of the file containing features with the paths
+    of the ground truth file.
+
+    Parameters:
+    -----------
+    gt_file: string
+        path to the file containing paths and ground truth
+    ft_file: string
+        path to the file containing extracted features. 
+        The content in output is saved in this file 
+    outfile: string
+        path to the file that will contain the new paths
+    """
+    gt_file = is_file(gt_file)
+    ft_file = is_file(ft_file)
+    dirin = dirname(ft_file)
+    fout = open(join(dirin, outfile), 'w')
+
+    nb_gt = PathfileHandler.count_lines(gt_file)
+    nb_ft = PathfileHandler.count_lines(ft_file)
+    if nb_gt != nb_ft:
+        logger.error('Number of lines are different in %s and %s' % (gt_file, ft_file))
+        sys.exit(0)
+
+    logger.info('Reading files...')
+    pb = progressbar.ProgressBar(nb_gt)
+    with open(gt_file) as fgt, open(ft_file) as fft:
+        for lgt, lft in zip(fgt, fft):
+            path_new = lgt.strip().split()[0]
+            path_old = lft.strip().split()[0]
+            lft = lft.replace(path_old, path_new)
+            fout.write(lft)
+            pb.update()
+    fout.close()
