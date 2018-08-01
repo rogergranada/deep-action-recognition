@@ -75,7 +75,7 @@ def grid_svm(trainfile, valfile, outputdir, kernel='rbf',
             clf.fit(X_train, y_train)
             pred = clf.predict(X_val)
 
-            fileout = join(outputdir, kernel+'_'+str(c)+'_'+str(g)'.txt')
+            fileout = join(outputdir, str(kernel)+'_'+str(c)+'_'+str(g)+'.txt')
             logger.info('saving output file in: %s' % fileout)
             with open(fileout, 'w') as fout:
                 for path, y, p in zip(vpaths, y_val, pred):
