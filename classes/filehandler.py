@@ -134,7 +134,7 @@ class PathfileHandler(object):
         logger.debug('Loading file: %s' % inputfile)
 
         if load:
-            self.vpaths, self.vlabels, self.vfeats = load_file(inputfile)
+            self.vpaths, self.vlabels, self.vfeats = self.load_file(inputfile)
 
 
     def __iter__(self):
@@ -518,3 +518,19 @@ def change_paths(gt_file, ft_file, outfile):
             fout.write(lft)
             pb.update()
     fout.close()
+
+
+def load_features(inputfile):
+    """
+    From a file with the path of images, true labels and features
+    return the features and true labels.
+
+    Parameters:
+    -----------
+    inputfile: string
+        path to the file containing paths, true labels and features
+    """
+    pf = PathfileHandler(inputfile, load=True)
+    X = np.array(pf.vfeats).astype(float)
+    y = np.array(pf.vlabels).astype(int)
+    return pf.vpaths, X, y
