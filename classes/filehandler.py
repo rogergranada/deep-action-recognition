@@ -482,6 +482,22 @@ class ImagePaths(PathfileHandler):
 #End of class ImagePaths
 
 
+def check_sizefiles(file1, file2, warning=False):
+    """
+    Verify whether both files have the same number of lines.
+    """
+    nb_1 = PathfileHandler.count_lines(file1)
+    nb_2 = PathfileHandler.count_lines(file2)
+    if nb_1 != nb_2:
+        logger.error('Number of lines are different in %s and %s (%d:%d)' % 
+                     (file1, file2, nb_1, nb_2))
+        if not warning:
+            sys.exit(0)
+    if nb_1 < nb_2:
+        return nb_1
+    return nb_2
+
+
 def change_paths(gt_file, ft_file, outfile):
     """
     Change the paths of the file containing features with the paths
@@ -500,14 +516,9 @@ def change_paths(gt_file, ft_file, outfile):
     gt_file = is_file(gt_file)
     ft_file = is_file(ft_file)
     dirin = dirname(ft_file)
+    nb_gt = check_sizefiles(gt_file, ft_file)
+
     fout = open(join(dirin, outfile), 'w')
-
-    nb_gt = PathfileHandler.count_lines(gt_file)
-    nb_ft = PathfileHandler.count_lines(ft_file)
-    if nb_gt != nb_ft:
-        logger.error('Number of lines are different in %s and %s' % (gt_file, ft_file))
-        sys.exit(0)
-
     logger.info('Reading files...')
     pb = progressbar.ProgressBar(nb_gt)
     with open(gt_file) as fgt, open(ft_file) as fft:
@@ -534,3 +545,54 @@ def load_features(inputfile):
     X = np.array(pf.vfeats).astype(float)
     y = np.array(pf.vlabels).astype(int)
     return pf.vpaths, X, y
+
+
+def merge_features(file1, file2, fileout, mean=False):
+    """
+    Given two files containing paths, true labels and features the function
+    merges both files into a single file containing paths, true labels and 
+    the concatenation or the mean of the features.
+
+    Obs. when two files have different number of features, a warning appears.
+    This case may occur when trying to concatenate raw RGB images and optical
+    flow images, since the last image in optical flow is not generated.
+    
+    Parameters:
+    -----------
+    file1 : string
+        path to the input file
+    file2 : string
+        path to the input file
+    fileout : string
+        path to the output file
+    mean: boolean
+        generate the mean of the features instead of the concatenation
+    """
+    nb_lines = check_sizefiles(file1, file2, warning=True)
+    logger.info('Recording output file: %s' % fileout)
+    fout = open(fileout, 'w')
+
+    logger.info('Reading files...')
+    pb = progressbar.ProgressBar(nb_lines)
+    id_line = 1
+    with open(file1) as fin1, open(file2) as fin2:
+        for l1, l2 in zip(fin1, fin2):
+            arr1 = l1.strip().split()
+            arr2 = l2.strip().split()
+            fname1 = basename(arr1[0])
+            fname2 = basename(arr2[0])
+            if fname1 != fname2:
+                logger.error('Trying to merge different images (%s : %s) : readingline (%d)' % (fname1, fname2, id_line))
+                logger.error('Error while reading line: %d' % id_line)
+                sys.exit(0)
+            if mean:
+                feats1 = np.array(map(float, arr1[2:]))
+                feats2 = np.array(map(float, arr2[2:]))
+                vmean = (feats1+feats2)/2.
+                feats = ' '.join(map(str, vmean))
+            else:
+                feats = ' '.join(l2.strip().split()[2:])
+            fout.write('%s %s %s\n' % (arr1[0], arr1[1], feats))
+            id_line += 1
+            pb.update()
+    fout.close()
