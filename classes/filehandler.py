@@ -13,6 +13,7 @@ from os.path import realpath, dirname, splitext
 from os.path import basename, isfile, isdir, join
 
 from classes import progressbar
+import fileconfig
 
 
 def is_file(inputfile, boolean=False):
@@ -62,18 +63,6 @@ def add2dic(dic, key, value):
         dic[key] = [value]
     return dic
 
-
-def imgpath2dic(inputfile):
-    """ Create a dictionary containing an index for each path in a file """
-    inputfile = is_file(inputfile)
-    dic = {}
-    index = 0
-    with open(inputfile) as fin:
-        for line in fin:
-            path = line.split()[0]
-            dic[index] = path
-            index += 1
-    return dic
 
 
 def pairs_of_paths(vpaths, window):
@@ -144,21 +133,16 @@ class PathfileHandler(object):
         pb = progressbar.ProgressBar(self.nb_lines)
         with open(self.inputfile) as fin:
             for self.k, line in enumerate(fin):
-                arr = line.strip().split()
+                arr = self.split_line(line)
                 if len(arr) == 1:
-                    self.path = arr
-                    yield self.path
-                elif len(arr) > 1:
                     self.path = arr[0]
-                    self.label = arr[1]
-                    if len(arr) > 2:
-                        if len(arr[2:]) == 1:
-                            self.feats = ast.literal_eval(arr[2])
-                        else:
-                            self.feats = map(float, arr[2:])
-                        yield self.path, self.label, self.feats
-                    else:
-                        yield self.path, self.label
+                    yield self.path
+                if len(arr) == 2:
+                    self.path, self.label = arr
+                    yield self.path, self.label
+                elif len(arr) == 3:
+                    self.path, self.label, self.feats = arr
+                    yield self.path, self.label, self.feats
                 if self.display:
                     pb.update()
 
@@ -203,6 +187,37 @@ class PathfileHandler(object):
         with open(inputfile) as fin:
             for n, _ in enumerate(fin, start=1): pass
         return n
+
+
+    @staticmethod
+    def split_line(line, text=False):
+        """
+        Split line into path, true label and features.
+        
+        Parameters:
+        -----------
+        line: string
+            line with at least `path`
+        text: boolean
+            return `feats` in text form instead of a list
+        """
+        arr = line.strip().split()
+        if len(arr) == 1:
+            path = arr
+            return path
+        elif len(arr) > 1:
+            path = arr[0]
+            label = arr[1]
+            if len(arr) > 2:
+                if text:
+                    feats = ' '.join(arr[2:])
+                elif len(arr[2:]) == 1:
+                    feats = ast.literal_eval(arr[2])
+                else:
+                    feats = map(float, arr[2:])
+                return path, label, feats
+            else:
+                return path, label
 
 
     def get_line(self, nb_line):
@@ -290,29 +305,13 @@ class PathfileHandler(object):
 class Videos(PathfileHandler):
     """ Class to extract videos from files """
 
-    def __init__(self, inputfile, dataset_name):
+    def __init__(self, inputfile, dataset):
         PathfileHandler.__init__(self, inputfile, display=False)
-
         self.videos = {}
         self.root = None
-        self.name = None
         self.ext = None
-        self.is_dataset(dataset_name)
-
-
-    def is_dataset(self, dtname):
-        nm_data = dtname.lower()
-        if nm_data in ("dogcentric", "dogs"):
-            self.name = "dogs"
-        elif nm_data in ("kscgr", "kitchen"):
-            self.name = "kscgr"
-        elif nm_data in ("ucf11", "ucf-11"):
-            self.name = "ucf11"
-        elif nm_data in ("penn", "pennaction"):
-            self.name = "penn"
-        else:
-            logger.error("Dataset %s does not exists!" % nm_data)
-            sys.exit(0)
+        cfg = fileconfig.Configuration()
+        self.name = cfg.has_dataset(dataset)
 
 
     def _videos_dogs(self, nb_frames=False):
@@ -420,29 +419,13 @@ class Videos(PathfileHandler):
 class ImagePaths(PathfileHandler):
     """ Class to deal with names of paths """
 
-    def __init__(self, inputfile, dataset_name, display=False):
+    def __init__(self, inputfile, dataset, display=False):
         PathfileHandler.__init__(self, inputfile, display=display)
-
-        self.name = None
         self.root = None
         self.fname = None
         self.ext = None
-        self.is_dataset(dataset_name)
-
-
-    def is_dataset(self, dtname):
-        nm_data = dtname.lower()
-        if nm_data in ("dogcentric", "dogs"):
-            self.name = "dogs"
-        elif nm_data in ("kscgr", "kitchen"):
-            self.name = "kscgr"
-        elif nm_data in ("ucf11", "ucf-11"):
-            self.name = "ucf11"
-        elif nm_data in ("penn", "pennaction"):
-            self.name = "penn"
-        else:
-            logger.error("Dataset %s does not exists!" % nm_data)
-            sys.exit(0)
+        cfg = fileconfig.Configuration()
+        self.name = cfg.has_dataset(dataset)
 
 
     def _paths_dogs(self):
@@ -472,11 +455,11 @@ class ImagePaths(PathfileHandler):
 
     def extract_root(self):
         """ extract the root and file name of paths """
-        if self.name == "dogs":
+        if self.name == "dog":
             self._paths_dogs()
         elif self.name in ("kscgr", "ucf11"):
             self._paths_kscgr_ucf11()
-        elif self.name in ("penn", "pennaction"):
+        elif self.name == "penn":
             self._paths_penn()
         return self.root, self.fname
 #End of class ImagePaths
@@ -546,8 +529,25 @@ def load_features(inputfile):
     y = np.array(pf.vlabels).astype(int)
     return pf.vpaths, X, y
 
+def merge_features(feats1, feats2, mean=False):
+    """
+    Function to merge `feats1`and `feats2` features into a single line.
+    By default the merging is performed by concatenating, but setting
+    the `mean` flag, features are merged by the average of their values.
+    """
+    if mean:
+        feats1 = np.array(map(float, feats1[2:]))
+        feats2 = np.array(map(float, feats2[2:]))
+        vmean = (feats1+feats2)/2.
+        feats = ' '.join(map(str, vmean))
+    else:
+        feats1 = ' '.join(map(str, feats1))
+        feats2 = ' '.join(map(str, feats2))
+        feats = feats1+' '+feats2
+    return feats
 
-def merge_features(file1, file2, fileout, mean=False):
+
+def merge_features_equal_files(file1, file2, fileout, mean=False):
     """
     Given two files containing paths, true labels and features the function
     merges both files into a single file containing paths, true labels and 
@@ -578,21 +578,81 @@ def merge_features(file1, file2, fileout, mean=False):
     with open(file1) as fin1, open(file2) as fin2:
         for l1, l2 in zip(fin1, fin2):
             arr1 = l1.strip().split()
-            arr2 = l2.strip().split()
             fname1 = basename(arr1[0])
+            feats1 = arr[2:]
+            
+            arr2 = l2.strip().split()
             fname2 = basename(arr2[0])
+            feats2 = arr[2:]
+            
             if fname1 != fname2:
-                logger.error('Trying to merge different images (%s : %s) : readingline (%d)' % (fname1, fname2, id_line))
+                logger.error('Trying to merge different images (%s : %s) : reading line (%d)' % (fname1, fname2, id_line))
                 logger.error('Error while reading line: %d' % id_line)
+                logger.error('Try merge_features_different_files() instead')
                 sys.exit(0)
-            if mean:
-                feats1 = np.array(map(float, arr1[2:]))
-                feats2 = np.array(map(float, arr2[2:]))
-                vmean = (feats1+feats2)/2.
-                feats = ' '.join(map(str, vmean))
-            else:
-                feats = ' '.join(l2.strip().split()[2:])
+            feats = merge_features(feats1, feats2, mean=mean)
             fout.write('%s %s %s\n' % (arr1[0], arr1[1], feats))
             id_line += 1
             pb.update()
     fout.close()
+
+
+def imgpath2dic(inputfile, dataset, id=True, filename=False):
+    """ Create a dictionary containing an index for each path in a file """
+    inputfile = is_file(inputfile)
+    pf = ImagePaths(inputfile, dataset, display=True)
+    dic = {}
+    for _ in pf:
+        if id:
+            dic[pf.k+1] = pf.path
+        else:
+            if filename:
+                _, fname = pf.extract_root()
+                dic[fname] = pf.k+1
+            else:
+                dic[pf.path] = pf.k+1
+    return dic
+
+
+def merge_features_different_files(file1, file2, fileout, dataset, mean=False, inverse=False):
+    """
+    Merge two files where the features are in different order. Use the first
+    file as reference or the second using `inverse`.
+    This function should be used only when the user knows that features are scrambled
+    or missing.
+
+    Parameters:
+    -----------
+    file1 : string
+        path to the input file
+    file2 : string
+        path to the input file
+    fileout : string
+        path to the output file
+    mean: boolean
+        generate the mean of the features instead of the concatenation
+    inverse: boolean
+        use the first or the second file as reference (inverse=False : 1st file)
+    """
+    logger.info('Recording output file: %s' % fileout)
+    fout = open(fileout, 'w')
+    if inverse:
+        frefs = file2
+        ffeat = file1
+    else:
+        frefs = file1
+        ffeat = file2
+
+    dfeat = imgpath2dic(ffeat, dataset, id=False, filename=True)
+    pfh = PathfileHandler(ffeat, display=False)
+
+    pf = ImagePaths(frefs, dataset, display=True)
+    for path, label, featsref in pf:
+        _, fname = pf.extract_root()
+        featsref = ' '.join(map(str, featsref))
+        if dfeat.has_key(fname):
+            nb_line = dfeat[fname]
+            line = pfh.get_line(nb_line)
+            _, _, feats = pfh.split_line(line, text=True)
+            fout.write('%s %s %s %s\n' % (path, label, featsref, feats))
+    fout.close() 

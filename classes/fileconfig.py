@@ -2,6 +2,17 @@
 #-*- coding: utf-8 -*-
 """
 This script deals with the configuration file ``datasets.conf``
+
+In this script, actions are stored in a dictionary with the main key represented by
+`ACT_<dataset>` in configuration file. Aliases to `<dataset>` are stored in another
+dictionary where the value refers to `<dataset>` name. Thus, the dictionary of actions
+may be composed as:
+
+actions['dog'] = ['Car', 'Drink', 'Feed', 'Left', 'Right', 'Pet', 'Play', 'Shake', 'Sniff', 'Walk']
+
+While the dictionary containing dataset may be composed as:
+
+dataset = {'dogs': 'dog', 'dogcentric': 'dog'}
 """
 import sys
 sys.path.insert(0, '..')
@@ -16,7 +27,8 @@ class Configuration(object):
         self.color_id = []
         self.color_hx = []
         self.color_nm = [] 
-        self.actions = {}     
+        self.actions = {}
+        self.dataset = {}
 
         if configfile:
             self.input = open(configfile)
@@ -65,24 +77,29 @@ class Configuration(object):
                 line = line.replace('ALIAS_', '')
                 dataset, arr = line.split(' = ')
                 dataset = dataset.strip().lower()
+                self.dataset[dataset] = dataset
                 alias = [word.strip() for word in arr.split(', ')]
                 for alias_name in alias:
-                    self.actions[alias_name.lower()] = self.actions[dataset]
+                    self.dataset[alias_name.lower()] = dataset
 
 
-    def _check_dataset(self, dataset):
+    def has_dataset(self, dataset, exit=True):
         """ Verify if the dataset exists """
         dataset = dataset.lower()
-        if not self.actions.has_key(dataset):
+        if not self.dataset.has_key(dataset):
             logger.error('Dataset %s does not exist!' % dataset)
-            sys.exit(0)
-        return dataset
+            if exit:
+                sys.exit(0)
+            else:
+                return False
+        return self.dataset[dataset]
+
 
     def labels(self, dataset):
         """
         Return the labels of ``dataset`` and their respective colors and ids
         """
-        dataset = self._check_dataset(dataset)
+        dataset = self.has_dataset(dataset)
         labels = self.actions[dataset]
         return labels
 
@@ -91,7 +108,7 @@ class Configuration(object):
         """
         Return the labels of ``dataset`` and their respective colors and ids
         """
-        dataset = self._check_dataset(dataset)
+        dataset = self.has_dataset(dataset)
         labels = self.actions[dataset]
         colors = self.color_hx[:len(labels)]
         ids = self.color_id[:len(labels)]
@@ -102,7 +119,7 @@ class Configuration(object):
         """
         Return each label with its ID associated
         """
-        dataset = self._check_dataset(dataset)
+        dataset = self.has_dataset(dataset)
         labels = self.actions[dataset]
         ids = self.color_id[:len(labels)]
         if key == 'label':
