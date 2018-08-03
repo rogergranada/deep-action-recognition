@@ -579,11 +579,11 @@ def merge_features_equal_files(file1, file2, fileout, mean=False):
         for l1, l2 in zip(fin1, fin2):
             arr1 = l1.strip().split()
             fname1 = basename(arr1[0])
-            feats1 = arr[2:]
+            feats1 = arr1[2:]
             
             arr2 = l2.strip().split()
             fname2 = basename(arr2[0])
-            feats2 = arr[2:]
+            feats2 = arr2[2:]
             
             if fname1 != fname2:
                 logger.error('Trying to merge different images (%s : %s) : reading line (%d)' % (fname1, fname2, id_line))
