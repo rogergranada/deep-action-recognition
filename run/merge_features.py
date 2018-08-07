@@ -24,12 +24,12 @@ def main(pathfeats1, pathfeats2, dataset, output=None, mean=False, different=Fal
     dataset = fc.Configuration().has_dataset(dataset)
     if output:
         if fh.is_folder(output, boolean=True):
-            fileout = join(output, 'concatenation.txt')
+            fileout = join(output, 'merged_feats.txt')
         else:
             fileout = fh.is_file(fileoutput)
     else:
         dirin = dirname(pathfeats1)
-        fileout = join(dirin, 'concatenation.txt')
+        fileout = join(dirin, 'merged_feats.txt')
     if different:
         fh.merge_features_different_files(pathfeats1, pathfeats2, fileout, dataset, mean=mean)
     else:
